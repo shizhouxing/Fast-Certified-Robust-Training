@@ -1,14 +1,6 @@
 {
-    "model": "cnn_7layer_bn",
     "data": "MNIST",
-    "training_params": {
-        "num_epochs": 70,
-        "scheduler_name": "SmoothedScheduler", 
-        "scheduler_opts": "start=1,length=20",
-        "batch_size": 256,
-        "lr_decay_factor": 0.2, 
-        "lr_decay_milestones": ""
-    },
+    "batch_size": 256,
     "bound_params": {
         "eps": 0.4,
         "bound_type": "IBP",

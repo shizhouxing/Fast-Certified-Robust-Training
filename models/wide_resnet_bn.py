@@ -15,13 +15,13 @@ def conv1x1(in_planes, out_planes, stride = 1):
     return nn.Conv2d(in_planes, out_planes, kernel_size=1, stride=stride, bias=True)
 
 class BasicBlock(nn.Module):
-    def __init__(self, inplanes, planes, stride, downsample, residual=True):
+    def __init__(self, inplanes, planes, stride, downsample, residual=True, bn=True):
         super(BasicBlock, self).__init__()
         self.conv1 = conv3x3(inplanes, planes, stride)
-        self.bn1 = nn.BatchNorm2d(planes)
+        self.bn1 = nn.BatchNorm2d(planes) if bn else nn.Identity()
         self.relu = nn.ReLU(inplace=True)
         self.conv2 = conv3x3(planes, planes)
-        self.bn2 = nn.BatchNorm2d(planes)
+        self.bn2 = nn.BatchNorm2d(planes) if bn else nn.Identity()
         self.downsample = downsample
         self.stride = stride
         self.residual = residual
@@ -51,7 +51,7 @@ class ResNet(nn.Module):
         self, block, layers, num_classes=1000,
         zero_init_residual=False, dense=False, residual=True,
         widen_factor=1, base_width=16, pool=True,
-        in_ch=3, in_dim=32
+        in_ch=3, in_dim=32, bn=True
     ):
         super(ResNet, self).__init__()
 
@@ -59,7 +59,8 @@ class ResNet(nn.Module):
 
         self.inplanes = base_width
         self.conv1 = conv3x3(in_ch, self.inplanes)
-        self.bn1 = nn.BatchNorm2d(self.inplanes)
+        self.bn = bn
+        self.bn1 = nn.BatchNorm2d(self.inplanes) if bn else nn.Identity()
         self.relu = nn.ReLU(inplace=True)
 
         self.layer1 = self._make_layer(block, base_width * widen_factor, layers[0], stride=1)
@@ -73,7 +74,7 @@ class ResNet(nn.Module):
             if dense:
                 dim_dense = 512
                 self.dense = nn.Linear(self.inplanes, dim_dense)
-                self.dense_bn = nn.BatchNorm1d(dim_dense)
+                self.dense_bn = nn.BatchNorm1d(dim_dense) if bn else nn.Identity()
                 self.fc = nn.Linear(dim_dense, num_classes)    
             else:
                 self.dense = None
@@ -83,7 +84,7 @@ class ResNet(nn.Module):
             assert dense
             dim_dense = 512
             self.dense = nn.Linear(self.inplanes*((in_dim//4)**2), dim_dense)
-            self.dense_bn = nn.BatchNorm1d(dim_dense)
+            self.dense_bn = nn.BatchNorm1d(dim_dense) if bn else nn.Identity()
             self.fc = nn.Linear(dim_dense, num_classes)
 
         for m in self.modules():
@@ -101,10 +102,10 @@ class ResNet(nn.Module):
         if self.residual and (stride != 1 or self.inplanes != planes):
             downsample = nn.Sequential(
                 conv1x1(self.inplanes, planes, stride),
-                nn.BatchNorm2d(planes),
+                nn.BatchNorm2d(planes) if self.bn else nn.Identity(),
             )
 
-        layers = [block(self.inplanes, planes, stride, downsample, residual=self.residual)]
+        layers = [block(self.inplanes, planes, stride, downsample, residual=self.residual, bn=self.bn)]
         for _ in range(1, blocks):
             layers.append(block(planes, planes, residual=self.residual))
         self.inplanes = planes
@@ -151,7 +152,15 @@ def wide_resnet_8_dense_no_pool(in_ch=3, in_dim=32):
 
 def wide_resnet_12_dense_no_pool(in_ch=3, in_dim=32):
     model = ResNet(BasicBlock, [1,1,1], num_classes=10, widen_factor=12, dense=True, pool=False)
-    return model       
+    return model     
+
+def wide_resnet(in_ch=3, in_dim=32):
+    return wide_resnet_8(in_ch, in_dim)
+
+def wide_resnet_no_bn(in_ch=3, in_dim=32):
+    model = ResNet(BasicBlock, [1,1,1], num_classes=10, widen_factor=8, 
+        dense=True, pool=False, in_ch=in_ch, in_dim=in_dim, bn=False)
+    return model
 
 def count_params(model):
     cnt = 0

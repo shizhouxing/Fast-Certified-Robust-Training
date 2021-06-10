@@ -198,16 +198,6 @@ def Train(model, t, loader, eps_scheduler, norm, train, opt, bound_type, method=
             opt.step()
         meter.update('Loss', loss.item(), data.size(0))
 
-        # check gradient
-        # for n, p in model.named_parameters():
-        #     if p.grad is None:
-        #         print('gradient for layer {} is NULL!!!'.format(n))
-        #     else:
-        #         print('gradient for layer {} is not null'.format(n))
-        #         print(p.grad.flatten()[:8])
-        #
-        # sys.exit()
-
         if batch_method != 'natural':
             meter.update('Robust_CE', robust_ce.item(), data.size(0))
             if not loss_fusion:
@@ -346,7 +336,6 @@ def main(args):
     else:
         timer = 0.0
         best_err = 1e10
-        # with torch.autograd.detect_anomaly():
         for t in range(epoch + 1, args.num_epochs+1):
             logger.log("Epoch {}, learning rate {}".format(t, lr_scheduler.get_last_lr()))
             start_time = time.time()
@@ -378,7 +367,6 @@ def main(args):
 
             save_dict = {'state_dict': state_dict, 'epoch': t, 'optimizer': opt.state_dict()}
             if t < int(eps_scheduler.params['start']):
-                # torch.save(save_dict, 'saved_models/natural_' + exp_name)
                 torch.save(save_dict, os.path.join(args.dir, 'natural_' + exp_name))
             elif t > int(eps_scheduler.params['start']) + int(eps_scheduler.params['length']):
                 current_err = m.avg('Verified_Err')

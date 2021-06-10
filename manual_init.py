@@ -1,49 +1,52 @@
 import torch
+import torch.nn as nn
 import math
+import pdb
+from auto_LiRPA.bound_ops import *
+import numpy as np
+from auto_LiRPA import BoundedModule, BoundDataParallel, BoundedTensor, CrossEntropyWrapper
+from auto_LiRPA.perturbations import *
 
-def manual_init(model_ori, mode=1):
+def get_params(model):
+    weights = []
+    biases = []
+
+    for p in model.named_parameters():
+        if 'weight' in p[0]:
+            weights.append(p)
+        elif 'bias' in p[0]:
+            biases.append(p)
+        else:
+            print('Skipping parameter {}'.format(p[0]))
+        
+    return weights, biases
+
+def manual_init(args, model_ori, model, train_data, mode=1):
+    mode =  args.manual_init_mode
+
+    # Main
     if mode == 1:
-        params = []
-        bns = []
-        for p in model_ori.named_parameters():
-            if p[0].find('.weight') != -1:
-                if p[0].find('bn') != -1 or p[1].ndim == 1:
-                    bns.append(p)
-                else:
-                    params.append(p)
+        weights = []
+        biases = []
 
-        for p in params[:-1]:
-            weight = p[1]
+        for p in model_ori.named_parameters():
+            if 'weight' in p[0]:
+                weights.append(p)
+            elif 'bias' in p[0]:
+                biases.append(p)
+            else:
+                raise ValueError
+
+        for i in range(len(weights)-1):
+            if weights[i][1].ndim == 1:
+                continue
+            weight = weights[i][1]
             fan_in, fan_out = torch.nn.init._calculate_fan_in_and_fan_out(weight)
             std = math.sqrt(2 * math.pi / (fan_in**2))     
-            std_before = p[1].std().item()
-            torch.nn.init.normal_(p[1], mean=0, std=std)
+            std_before = weight.std().item()
+            torch.nn.init.normal_(weight, mean=0, std=std)
             print('Reinitialize {}, std before {:.5f}, std now {:.5f}'.format(
-                p[0], std_before, p[1].std()))
-
-    # Orthogonal initialization
-    elif mode == 3:
-        params = []
-        bns = []
-        for p in model_ori.named_parameters():
-            if p[0].find('.weight') != -1:
-                if p[0].find('bn') != -1 or p[1].ndim == 1:
-                    bns.append(p)
-                else:
-                    params.append(p)
-
-        for p in params[:-1]:
-            # weight = p[1]
-            # fan_in, fan_out = torch.nn.init._calculate_fan_in_and_fan_out(weight)
-            # std = math.sqrt(2 * math.pi / (fan_in**2))     
-            std_before = p[1].std().item()
-            print('before mean abs', p[1].abs().mean())
-            # torch.nn.init.normal_(p[1], mean=0, std=std)
-            torch.nn.init.orthogonal_(p[1])
-            print('Reinitialize {} with orthogonal matrix, std before {:.5f}, std now {:.5f}'.format(
-                p[0], std_before, p[1].std()))
-            print('after mean abs', p[1].abs().mean())
-    
+                weights[i][0], std_before, weight.std()))
     else:
         raise ValueError(mode)
 

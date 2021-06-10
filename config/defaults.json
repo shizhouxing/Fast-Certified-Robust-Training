@@ -1,23 +1,17 @@
 {
-    "model": "cnn_7layer_bn",
     "data": "CIFAR",
     "seed": 100,    
     "training_params": {
         "method": "robust",
-        "num_epochs": 160,
-        "scheduler_name": "SmoothedScheduler", 
-        "scheduler_opts": "start=2,length=80",
-        "batch_size": 128,
-        "lr": 5e-4,
-        "lr_decay_factor": 0.2, 
-        "lr_decay_milestones": ""
+        "batch_size": 128
     },
     "bound_params": {
         "eps": 0.03137,
+        "norm": "inf",
         "bound_type": "IBP",
         "bound_opts": {
             "relu": "adaptive",
             "exp": "clamp_constant"
-        }         
+        }
     }
 }

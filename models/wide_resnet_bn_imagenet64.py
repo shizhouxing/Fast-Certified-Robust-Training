@@ -113,7 +113,6 @@ class Wide_ResNet(nn.Module):
             x = self.avgpool(x)
 
         x = x.view(x.size(0), -1)
-        # torch.flatten(x, 1)
 
         if self.dense:
             x = F.relu(self.dense_bn(self.dense(x)))

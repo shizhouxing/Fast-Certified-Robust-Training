@@ -7,7 +7,7 @@ from auto_LiRPA.bound_ops import *
 from collections import namedtuple
 
 
-Node = namedtuple('Node', 'node lower upper forward_value')
+Node = namedtuple('Node', 'node lower upper')
 
 def compute_stab_reg(args, model, meter, eps, eps_scheduler):
     loss = torch.zeros(()).to(args.device)
@@ -22,10 +22,9 @@ def compute_stab_reg(args, model, meter, eps, eps_scheduler):
             if isinstance(model, BoundDataParallel):
                 lower = model(get_property=True, node_name=m.name, att_name='lower')
                 upper = model(get_property=True, node_name=m.name, att_name='upper')
-                forward_value = model(get_property=True, node_name=m.name, att_name='forward_value')
             else:
-                lower, upper, forward_value = m.lower, m.upper, m.forward_value
-            nodes[m.name] = Node(m, lower, upper, forward_value)
+                lower, upper = m.lower, m.upper
+            nodes[m.name] = Node(m, lower, upper)
 
     
     for k, v in nodes.items():
@@ -68,10 +67,9 @@ def compute_reg(args, model, meter, eps, eps_scheduler):
                 raise NotImplementedError
                 lower = model(get_property=True, node_name=m.name, att_name='lower')
                 upper = model(get_property=True, node_name=m.name, att_name='upper')
-                forward_value = model(get_property=True, node_name=m.name, att_name='forward_value')
             else:
-                lower, upper, forward_value = m.lower, m.upper, m.forward_value
-            nodes[m.name] = Node(m, lower, upper, forward_value)
+                lower, upper = m.lower, m.upper
+            nodes[m.name] = Node(m, lower, upper)
             if type(m) == BoundInput:
                 assert node_inp is None
                 node_inp = nodes[m.name]
@@ -89,9 +87,14 @@ def compute_reg(args, model, meter, eps, eps_scheduler):
             diff = ((upper - lower) / 2)
             tightness = diff.mean()
             mean_ = center.mean()
-            std_ = center.std()            
+
+            if args.reg_concat:
+                std_ = (lower.std() + upper.std()) / 2
+            else:
+                std_ = center.std()            
 
             loss_tightness += F.relu(args.tol - tightness_0 / tightness.clamp(min=1e-12)) / args.tol
+            # Useless when BN is fully added
             loss_std += F.relu(args.tol - std_) / args.tol
             cnt += 1
 
@@ -100,8 +103,8 @@ def compute_reg(args, model, meter, eps, eps_scheduler):
             mean_act = (center * mask_act).mean()
             mean_inact = (center * mask_inact).mean()
             delta = (center - mean_)**2
-            var_act = (delta * mask_act).sum()# / center.numel()
-            var_inact = (delta * mask_inact).sum()# / center.numel()                        
+            var_act = (delta * mask_act).sum()
+            var_inact = (delta * mask_inact).sum()
 
             mean_ratio = mean_act / -mean_inact
             var_ratio = var_act / var_inact
@@ -112,15 +115,6 @@ def compute_reg(args, model, meter, eps, eps_scheduler):
                 / args.tol)       
             if not torch.isnan(loss_relu_) and not torch.isinf(loss_relu_):
                 loss_relu += loss_relu_ 
-
-            if args.debug:
-                print(m.name, m, 
-                    'tightness {:.4f} gain {:.4f} std {:.4f}'.format(
-                        tightness.item(), (tightness/tightness_0).item(), std_.item()),
-                    'input', m.inputs[0], m.inputs[0].name,
-                    'active {:.4f} inactive {:.4f}'.format(
-                        (lower>0).float().sum()/lower.numel(),
-                        (upper<0).float().sum()/lower.numel()))
 
     loss_tightness /= cnt
     loss_std /= cnt
@@ -140,7 +134,7 @@ def compute_reg(args, model, meter, eps, eps_scheduler):
     if args.no_reg_dec:
         intensity = args.reg_lambda
     else:
-        intensity = args.reg_lambda * (1 - eps / eps_scheduler.get_max_eps())
+        intensity = args.reg_lambda * (1 - eps_scheduler.get_eps() / eps_scheduler.get_max_eps())
     loss *= intensity
 
     return loss
