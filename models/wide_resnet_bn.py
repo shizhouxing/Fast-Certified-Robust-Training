@@ -123,7 +123,7 @@ class ResNet(nn.Module):
         if self.pool:
             x = self.avgpool(x)
 
-        x = Flatten()(x) #torch.flatten(x, 1)
+        x = Flatten()(x)
 
         if self.dense:
             x = F.relu(self.dense_bn(self.dense(x)))

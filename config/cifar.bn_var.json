@@ -1,0 +1,14 @@
+{
+    "note": "use mean only for BN",
+    "data": "CIFAR",
+    "batch_size": 128,
+    "bound_params": {
+        "eps": 0.03137,
+        "bound_opts": {
+            "bn": {
+                "mean": false,
+                "var": true
+            }
+        }         
+    }
+}

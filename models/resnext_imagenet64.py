@@ -17,21 +17,19 @@ class Block(nn.Module):
         self.conv1 = nn.Conv2d(in_planes, group_width, kernel_size=1, bias=True)
         self.bn1 = nn.BatchNorm2d(group_width)
         self.conv2 = nn.Conv2d(group_width, group_width, kernel_size=3, stride=stride, padding=1, groups=cardinality, bias=True)
-        self.bn2 = nn.BatchNorm2d(group_width)
         self.conv3 = nn.Conv2d(group_width, self.expansion*group_width, kernel_size=1, bias=True)
-        self.bn3 = nn.BatchNorm2d(self.expansion*group_width)
 
         self.shortcut = nn.Sequential()
         if stride != 1 or in_planes != self.expansion*group_width:
             self.shortcut = nn.Sequential(
                 nn.Conv2d(in_planes, self.expansion*group_width, kernel_size=1, stride=stride, bias=True),
-                nn.BatchNorm2d(self.expansion*group_width)
+                # nn.BatchNorm2d(self.expansion*group_width)
             )
 
     def forward(self, x):
         out = F.relu(self.bn1(self.conv1(x)))
-        out = F.relu(self.bn2(self.conv2(out)))
-        out = self.bn3(self.conv3(out))
+        out = F.relu(self.conv2(out))
+        out = self.conv3(out)
         out += self.shortcut(x)
         out = F.relu(out)
         return out
@@ -45,16 +43,11 @@ class ResNeXt(nn.Module):
         self.in_planes = 16
 
         self.conv1 = nn.Conv2d(3, 16, kernel_size=3, bias=True, padding=1)
-        self.bn1 = nn.BatchNorm2d(16)
         self.layer1 = self._make_layer(num_blocks[0], 1)
         self.layer2 = self._make_layer(num_blocks[1], 2)
         self.layer3 = self._make_layer(num_blocks[2], 2)
-
         self.linear1 = nn.Linear(cardinality*bottleneck_width*2048, 512)
-        self.bn_dense = nn.BatchNorm1d(512)
         self.linear2 = nn.Linear(512, num_classes)
-
-        self.relu = nn.ReLU()
 
 
     def _make_layer(self, num_blocks, stride):
@@ -68,18 +61,14 @@ class ResNeXt(nn.Module):
         return nn.Sequential(*layers)
 
     def forward(self, x):
-        out = self.conv1(x)
-        out = self.bn1(out)
-        out = self.relu(out)
-
+        out = F.relu(self.conv1(x))
         out = self.layer1(out)
         out = self.layer2(out)
         out = self.layer3(out)
-
         out = out.view(out.size(0), -1)
-        out = F.relu(self.bn_dense(self.linear1(out)))
+        out = F.relu(self.linear1(out))
         out = self.linear2(out)
         return out
 
-def ResNeXt_bn_imagenet64(in_ch, in_dim):
+def ResNeXt_imagenet64(in_ch, in_dim):
     return ResNeXt(num_blocks=[2,2,2], cardinality=2, bottleneck_width=8)

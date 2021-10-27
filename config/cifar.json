@@ -2,11 +2,6 @@
     "data": "CIFAR",
     "batch_size": 128,
     "bound_params": {
-        "eps": 0.03137,
-        "bound_type": "IBP",
-        "bound_opts": {
-            "relu": "adaptive",
-            "exp": "clamp_constant"
-        }         
+        "eps": 0.03137
     }
 }

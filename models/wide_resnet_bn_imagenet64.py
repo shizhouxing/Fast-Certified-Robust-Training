@@ -2,13 +2,11 @@ import torch
 import torch.nn as nn
 import torch.nn.init as init
 import torch.nn.functional as F
-
 import sys
 import numpy as np
 
 def conv3x3(in_planes, out_planes, stride=1):
     return nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride, padding=1, bias=True)
-
 
 def conv1x1(in_planes, out_planes, stride = 1):
     """1x1 convolution"""
@@ -107,16 +105,12 @@ class Wide_ResNet(nn.Module):
         x = self.relu(x)
         x = self.layer1(x)
         x = self.layer2(x)
-        x = self.layer3(x)
-        
+        x = self.layer3(x)        
         if self.pool:
             x = self.avgpool(x)
-
         x = x.view(x.size(0), -1)
-
         if self.dense:
             x = F.relu(self.dense_bn(self.dense(x)))
-
         return self.fc(x)
 
 def wide_resnet_bn_imagenet64(in_ch=3, in_dim=56):

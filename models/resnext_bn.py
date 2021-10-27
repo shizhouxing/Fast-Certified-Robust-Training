@@ -48,7 +48,6 @@ class ResNeXt(nn.Module):
         self.layer1 = self._make_layer(num_blocks[0], 1)
         self.layer2 = self._make_layer(num_blocks[1], 2)
         self.layer3 = self._make_layer(num_blocks[2], 2)
-        # self.layer4 = self._make_layer(num_blocks[3], 2)
 
         self.linear1 = nn.Linear(self.in_planes * ((in_dim // 4)**2), 512)
         self.bn_dense = nn.BatchNorm1d(512) if bn else nn.Identity()
@@ -65,13 +64,11 @@ class ResNeXt(nn.Module):
         return nn.Sequential(*layers)
 
     def forward(self, x):
-        # out = F.relu(self.conv1(x))
         out = F.relu(self.bn1(self.conv1(x)))
-
         out = self.layer1(out)
         out = self.layer2(out)
         out = self.layer3(out)
-        out = Flatten()(out) #torch.flatten(out, 1)
+        out = Flatten()(out)
         out = F.relu(self.bn_dense(self.linear1(out)))
         out = self.linear2(out)
         return out
@@ -88,16 +85,3 @@ def resnext(in_ch=3, in_dim=32):
 
 def resnext_no_bn(in_ch=3, in_dim=32):
     return ResNeXt_2_32(in_ch, in_dim, bn=False)    
-
-if __name__ == "__main__":
-    from .wide_resnet_bn import count_params
-
-    dummy_in = torch.randn(1,3,32,32)
-    model = ResNeXt_2_32()
-    print(model)
-    print(count_params(model)/1e6)
-
-    from .wide_resnet_bn import wide_resnet_8
-    print(count_params(wide_resnet_8())/1e6)
-
-    print(count_params(ResNeXt_4_20())/1e6)
