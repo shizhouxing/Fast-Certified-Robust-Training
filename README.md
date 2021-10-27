@@ -1,4 +1,4 @@
-# Fast Certified Robust Training via Better Initialization and Warmup
+# Fast Certified Robust Training with Short Warmup
 
 Interval bound based certified robust training such as [IBP](https://github.com/deepmind/interval-bound-propagation) and [CROWN-IBP](https://github.com/huanzhang12/CROWN-IBP) are one of the most effective approaches for L_inf norm certified robustness. Unfortunately, IBP based training is often unstable and requires a large number of "warmup" epochs and a long training schedule. Existing works typically *require a large number epochs* (e.g., a few thousands) to achieve SOTA certified error. 
 
@@ -14,7 +14,7 @@ To address the above two issues, we propose the following improvements for certi
 
 With our proposed **initialization**, **architectural changes**, and **regularizers** combined, we achieved **65.03%** verified error on CIFAR-10 (eps=8/255), **82.13%** verified error on TinyImageNet, and **10.98%** verified error on MNIST (eps=0.4), which noticeably outperforms literature IBP and CROWN-IBP results. Additionally, we need much fewer training epochs to achieve these results: **160 epochs** for CIFAR-10 and **80 epochs** for TinyImageNet. More details can be found in our paper:
 
-[Fast Certified Robust Training viaBetter Initialization and Shorter Warmup](https://arxiv.org/abs/2103.17268), by Zhouxing Shi*, Yihan Wang*, Huan Zhang, Jinfeng Yi and Cho-Jui Hsieh (\* Equal contribution), to appear in *NeurIPS 2021*.
+[Fast Certified Robust Training with Short Warmup](https://arxiv.org/abs/2103.17268), by Zhouxing Shi*, Yihan Wang*, Huan Zhang, Jinfeng Yi and Cho-Jui Hsieh (\* Equal contribution), to appear in *NeurIPS 2021*.
 
 ## Dependencies
 
