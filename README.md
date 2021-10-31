@@ -14,7 +14,7 @@ To address the above two issues, we propose the following improvements for certi
 
 With our proposed **initialization**, **architectural changes**, and **regularizers** combined, we achieved **65.03%** verified error on CIFAR-10 (eps=8/255), **82.13%** verified error on TinyImageNet, and **10.98%** verified error on MNIST (eps=0.4), which noticeably outperforms literature IBP and CROWN-IBP results. Additionally, we need much fewer training epochs to achieve these results: **160 epochs** for CIFAR-10 and **80 epochs** for TinyImageNet. More details can be found in our paper:
 
-[Fast Certified Robust Training with Short Warmup](https://arxiv.org/abs/2103.17268), by Zhouxing Shi*, Yihan Wang*, Huan Zhang, Jinfeng Yi and Cho-Jui Hsieh (\* Equal contribution), to appear in *NeurIPS 2021*.
+[Fast Certified Robust Training with Short Warmup](https://arxiv.org/abs/2103.17268), by Zhouxing Shi\*, Yihan Wang\*, Huan Zhang, Jinfeng Yi and Cho-Jui Hsieh (\* Equal contribution), to appear in *NeurIPS 2021*.
 
 ## Dependencies
 
@@ -64,9 +64,9 @@ bash tinyimagenet_download.sh
 
 Then
 ```
-python train.py --method={method} --dir=model_tinyimagenet --scheduler_opts=start=2,length=20 --lr-decay-milestones=60,70 --num-epochs=80 --num_class=200 --config=config/tinyimagenet.ibp.json --model={model}
+python train.py --method={method} --config=config/tinyimagenet.ibp.json --model={model} --scheduler_name=SmoothedScheduler --scheduler_opts=start=2,length=20 --reg-lambda=2e-1 --num-epochs=80  --lr-decay-milestones=61,71 --num-class 200 --grad-acc-steps=2 --batch-size=128
 ```
-where `{model}` can be chosen from `["cnn_7layer_bn", "wide_resnet_imagenet64", "ResNeXt_imagenet64"]`.  It is preferred to use a smaller `lambda` for TinyImagenet, by setting `--reg-lambda` (e.g., 0.1, in contrast to the default 0.5 value).
+where `{model}` can be chosen from `["cnn_7layer_bn_imagenet", "wide_resnet_imagenet64", "ResNeXt_imagenet64"]`.  It is preferred to use a smaller `lambda` for TinyImagenet, by setting `--reg-lambda` (e.g., 0.1, in contrast to the default 0.5 value).
 
 ### GPU Memory for Large Models
 

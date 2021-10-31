@@ -6,7 +6,7 @@ def add_arguments_lipschitz(parser):
 
 def add_arguments_regularizers_and_init(parser):
     """ NeurIPS 2021 """
-    parser.add_argument('--reg-obj', '--pre-obj', type=str, nargs='+', default=['relu', 'std', 'tightness'])
+    parser.add_argument('--reg-obj', '--pre-obj', type=str, nargs='+', default=['relu', 'tightness'])
     parser.add_argument('--reg-lambda', '--pi', type=float, default=0.5)    
     parser.add_argument('--reg', action='store_true')
     parser.add_argument('--vol-reg', action='store_true')
