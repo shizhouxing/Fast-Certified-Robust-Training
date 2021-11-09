@@ -18,7 +18,7 @@ With our proposed **initialization**, **architectural changes**, and **regulariz
 
 ## Dependencies
 
-We use [auto_LiRPA](https://github.com/KaidiXu/auto_LiRPA) as a base framework for robustness verification. To install it:
+We use [auto_LiRPA](https://github.com/KaidiXu/auto_LiRPA) as a base framework for robustness verification. It can be installed via `pip install auto-LiRPA==0.2` or source code:
 
 ```bash
 git clone https://github.com/KaidiXu/auto_LiRPA.git
