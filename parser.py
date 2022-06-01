@@ -70,7 +70,6 @@ def add_arguments_opt(parser):
 def add_arguments_objective(parser):
     parser.add_argument('--loss', type=str, default='ce')
     parser.add_argument('--ls', type=float, default=0.0)
-    parser.add_argument('--kappa', type=float, default=1.0)
 
 def override_neurips2021(args):
     # Rename for compatibility

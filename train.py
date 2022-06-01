@@ -102,7 +102,7 @@ def Train(model, model_ori, t, loader, eps_scheduler, opt, loss_fusion=False, va
             else:
                 loss = torch.tensor(0.).to(args.device)
             if robust:
-                loss += robust_loss * args.kappa + robust_loss * (1 - args.kappa)
+                loss += robust_loss
             else:
                 loss += regular_ce
             meter.update('Loss', loss.item(), data.size(0)) 
