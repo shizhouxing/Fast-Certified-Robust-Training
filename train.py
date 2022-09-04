@@ -1,15 +1,8 @@
 import time
 import json
-import argparse
 import pdb
-import logging
-import copy
-import numpy as np
 from torch.utils.tensorboard import SummaryWriter
-import torch.optim as optim
-import torch.nn as nn
-import torch.nn.functional as F
-from auto_LiRPA import BoundedModule, BoundDataParallel, BoundedTensor, CrossEntropyWrapper
+from auto_LiRPA import BoundedModule, CrossEntropyWrapper
 from auto_LiRPA.perturbations import *
 from auto_LiRPA.utils import MultiAverageMeter
 from auto_LiRPA.bound_ops import *
@@ -19,7 +12,6 @@ from utils import *
 from manual_init import manual_init, kaiming_init
 from parser import parse_args
 from certified import cert
-from adversarial import adv
 from regularization import compute_reg, compute_stab_reg, compute_vol_reg, compute_L1_reg
 
 args = parse_args()
@@ -78,19 +70,11 @@ def Train(model, model_ori, t, loader, eps_scheduler, opt, loss_fusion=False, va
             if grad_acc > 1:
                 data, labels = data_batch[bsz*k:bsz*(k+1)], labels_batch[bsz*k:bsz*(k+1)]
 
-            if args.mode == 'cert':
-                regular_ce, robust_loss, regular_err, robust_err = cert(
-                    args, model, model_ori, t, epoch_progress, data, labels, eps=eps, 
-                    data_max=data_max, data_min=data_min, std=std, robust=robust, reg=reg,
-                    loss_fusion=loss_fusion, eps_scheduler=eps_scheduler, 
-                    train=train, meter=meter)
-            elif args.mode == 'adv':
-                method = args.method if train else 'pgd'
-                regular_ce, robust_loss, regular_err, robust_err = adv(
-                    args, model, model_ori, t, epoch_progress, data, labels, eps=eps, 
-                    data_max=data_max, data_min=data_min, std=std, train=train, meter=meter)
-            else:
-                raise NotImplementedError
+            regular_ce, robust_loss, regular_err, robust_err = cert(
+                args, model, model_ori, t, epoch_progress, data, labels, eps=eps, 
+                data_max=data_max, data_min=data_min, std=std, robust=robust, reg=reg,
+                loss_fusion=loss_fusion, eps_scheduler=eps_scheduler, 
+                train=train, meter=meter)
             update_meter(meter, regular_ce, robust_loss, regular_err, robust_err, data.size(0))
 
             if reg:
@@ -182,8 +166,6 @@ def main(args):
     logger.info('Parameter shapes: {}'.format([p.shape for p in params]))
     if args.multi_gpu:
         raise NotImplementedError('Multi-GPU is not supported yet')
-        model = BoundDataParallel(model)
-        model_loss = BoundDataParallel(model_loss)
 
     opt = get_optimizer(args, params, checkpoint)
     max_eps = args.eps or bound_config['eps']

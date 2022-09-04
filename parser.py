@@ -24,23 +24,6 @@ def add_arguments_regularizers_and_init(parser):
     parser.add_argument('--no-init', action='store_true', help='No initialization')   
     parser.add_argument('--length', type=int)
 
-def add_arguments_adversarial_training(parser):
-    """Add arguments for adversarial training"""
-    parser.add_argument('--pgd-relu', action='store_true')
-    parser.add_argument('--pgd-relu-w', type=float, default=10, help='Weight of the loss term of unstable relu neurons')
-    parser.add_argument('--pgd-relu-iters', type=int, default=7)
-    parser.add_argument('--pgd-relu-mask-cor', action='store_true')
-    parser.add_argument('--pgd-relu-scheduler', type=int, default=0)
-    parser.add_argument('--trades-relu', action='store_true')
-    parser.add_argument('--trades-relu-w', type=float, default=10, help='Weight of the loss term of unstable relu neurons')
-    parser.add_argument('--trades-relu-scheduler', type=int, default=0)
-    parser.add_argument('--alpha', type=float, default=10./255)
-    parser.add_argument('--pgd-alpha', type=float, default=2./255)
-    parser.add_argument('--test-pgd-alpha', type=float, default=2./255)
-    parser.add_argument('--attack-iters', type=int, default=7, help='Attack iterations for pgd training')
-    parser.add_argument('--attack-iters-eval', type=int, default=10, help='Attack iterations for pgd evaluation')
-    parser.add_argument('--bn-eval', action='store_true', help='Use eval mode BN for adversarial attack')
-
 def add_arguments_data(parser):
     parser.add_argument('--random-crop', type=int, default=2)
     parser.add_argument('--num-class', type=int, default=10)
@@ -151,7 +134,7 @@ def parse_args():
     parser.add_argument('--no-loss-fusion', action='store_true')
     parser.add_argument('--save-all', action='store_true', help='Save all the checkpoints')
     parser.add_argument('--model-params', type=str, default='')
-    parser.add_argument('--mode', type=str, default='cert', choices=['cert', 'adv', 'natural'])
+    parser.add_argument('--mode', type=str, default='cert', choices=['cert', 'natural'])
     parser.add_argument('--eval', action='store_true')
     parser.add_argument('--complete', action='store_true', help='Complete verification or approximately complete PGD')
 
@@ -159,7 +142,6 @@ def parse_args():
     add_arguments_eps(parser)
     add_arguments_opt(parser)
     add_arguments_objective(parser)
-    add_arguments_adversarial_training(parser)
     add_arguments_regularizers_and_init(parser)
     add_arguments_lipschitz(parser)
     args = parser.parse_args()
