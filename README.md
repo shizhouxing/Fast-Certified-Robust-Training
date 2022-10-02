@@ -71,3 +71,7 @@ where `{model}` can be chosen from `["cnn_7layer_bn_imagenet", "wide_resnet_imag
 ### GPU Memory for Large Models
 
 Since some models are relatively large, when the model cannot fit into the available GPU memory, you may add a `--grad-acc-steps` argument for gradient accmulation. Multi-GPU is not supported so far.
+
+## Checkpoint
+
+We have released some of the [checkpoints](https://drive.google.com/drive/folders/1lWK0JDhsqtCD2FtvEVPstcFCUo_mlGCg?usp=sharing) of our training.
