@@ -15,6 +15,8 @@ from models import *
 ce_loss = nn.CrossEntropyLoss()
 
 def set_file_handler(logger, dir):
+    if not os.path.exists(dir):
+        os.makedirs(dir)
     file_handler = logging.FileHandler(os.path.join(dir, 'train.log'))
     file_handler.setFormatter(logging.Formatter('%(levelname)-8s %(asctime)-12s %(message)s'))
     logger.addHandler(file_handler) 

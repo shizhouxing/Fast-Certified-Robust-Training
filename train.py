@@ -10,7 +10,7 @@ from config import load_config
 from datasets import load_data
 from utils import *
 from manual_init import manual_init, kaiming_init
-from parser import parse_args
+from argparser import parse_args
 from certified import cert
 from regularization import compute_reg, compute_stab_reg, compute_vol_reg, compute_L1_reg
 
