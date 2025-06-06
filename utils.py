@@ -11,6 +11,7 @@ from auto_LiRPA.bound_ops import BoundExp, BoundRelu
 from auto_LiRPA.utils import logger
 from auto_LiRPA.eps_scheduler import *
 from models import *
+import wandb
 
 ce_loss = nn.CrossEntropyLoss()
 
@@ -50,12 +51,13 @@ def update_state_dict(model, model_loss):
     keys = model.state_dict().keys()
     for name in state_dict_loss:
         v = state_dict_loss[name]
-        for prefix in ['model.', '/w.', '/b.', '/running_mean.']:
-            if name.startswith(prefix):
-                name = name[len(prefix):]
-                break
-        if not name in keys:
-            raise KeyError(name)
+    #     for prefix in ['model.', '/w.', '/b.', '/running_mean.']:
+    #         if name.startswith(prefix):
+    #             name = name[len(prefix):]
+    #             break
+    #     if not name in keys:
+    #         raise KeyError(name)
+        name = model_loss.node_name_map[name]
         state_dict[name] = v
     model.load_state_dict(state_dict)
 
@@ -68,30 +70,48 @@ def update_meter(meter, regular_ce, robust_loss, regular_err, robust_err, batch_
     if robust_err is not None:
         meter.update('Rob_Err', robust_err, batch_size)
         
-def update_log_writer(args, writer, meter, epoch, train, robust):
-    if train:
-        writer.add_scalar('loss/train', meter.avg("CE"), epoch)
-        writer.add_scalar('err/train', meter.avg("Err"), epoch)
-        if robust:
-            writer.add_scalar('loss/robust_train', meter.avg("Rob_Loss"), epoch)
-            writer.add_scalar('err/robust_train', meter.avg("Rob_Err"), epoch)
-    else:
-        writer.add_scalar('loss/test', meter.avg("CE"), epoch)
-        writer.add_scalar('err/test', meter.avg("Err"), epoch)
-        if robust:
-            writer.add_scalar('loss/robust_test', meter.avg("Rob_Loss"), epoch)
-            writer.add_scalar('err/robust_test', meter.avg("Rob_Err"), epoch)   
-            writer.add_scalar('eps', meter.avg('eps'), epoch)
+def update_log_writer(args, meter, epoch, train, robust):
+    prefix = 'train' if train else 'test'
+    metrics = {
+        f'loss/{prefix}': meter.avg("CE"),
+        f'err/{prefix}': meter.avg("Err"),
+        f'active/{prefix}': meter.avg("active"),
+        f'inactive/{prefix}': meter.avg("inactive"),
+        f'loss_reg/{prefix}': meter.avg("loss_reg"),
+        f'L_tightness/{prefix}': meter.avg("L_tightness"),
+        f'L_relu/{prefix}': meter.avg("L_relu"),
+        f'L_std/{prefix}': meter.avg("L_std"),
+        f'wnorm/{prefix}': meter.avg("wnorm"),
+        f'time/{prefix}': meter.avg("Time")
+    }
+    
+    if robust:
+        metrics.update({
+            f'loss/robust_{prefix}': meter.avg("Rob_Loss"),
+            f'err/robust_{prefix}': meter.avg("Rob_Err")
+        })
+    
+    # Log to wandb
+    wandb.log(metrics, step=epoch)
+    
+    if not train and robust:
+        eps_metric = {'eps': meter.avg('eps')}
+        wandb.log(eps_metric, step=epoch)
 
-def update_log_reg(writer, meter, epoch, train, model):
+def update_log_reg(meter, epoch, train, model):
     set = 'train' if train else 'test'
-    writer.add_scalar('loss/pre_{}'.format(set), meter.avg("loss_reg"), epoch)
-
+    metrics = {
+        f'loss/pre_{set}': meter.avg("loss_reg")
+    }
+    
     if not train:
         for item in ['std', 'relu', 'tightness']:
-            key = 'L_{}'.format(item)
+            key = f'L_{item}'
             if key in meter.lasts:
-                writer.add_scalar('loss/{}'.format(key), meter.avg(key), epoch)
+                metrics[f'loss/{key}'] = meter.avg(key)
+    
+    # Log to wandb
+    wandb.log(metrics, step=epoch)
 
 def parse_opts(s):
     opts = s.split(',')

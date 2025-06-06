@@ -1,7 +1,7 @@
 import time
 import json
 import pdb
-from torch.utils.tensorboard import SummaryWriter
+import wandb
 from auto_LiRPA import BoundedModule, CrossEntropyWrapper
 from auto_LiRPA.perturbations import *
 from auto_LiRPA.utils import MultiAverageMeter
@@ -16,7 +16,13 @@ from regularization import compute_reg, compute_stab_reg, compute_vol_reg, compu
 
 args = parse_args()
 
-writer = SummaryWriter(os.path.join(args.dir, 'log'), flush_secs=10)
+# Initialize wandb
+wandb.init(
+    project="fast-certified-robust-training",
+    config=vars(args),
+    name=f"{args.model}_{args.bound_type}_eps{args.eps}"
+)
+
 if not args.verify:
     set_file_handler(logger, args.dir)
 logger.info('Arguments: {}'.format(args))
@@ -112,6 +118,22 @@ def Train(model, model_ori, t, loader, eps_scheduler, opt, loss_fusion=False, va
         meter.update('wnorm', get_weight_norm(model_ori))
         meter.update('Time' , time.time() - start)
 
+        # Log batch metrics to wandb
+        if (i + 1) % args.log_interval == 0 and (train or args.eval or args.verify):
+            batch_metrics = {
+                'batch/eps': eps,
+                'batch/loss': meter.avg('Loss'),
+                'batch/grad_norm': meter.avg('grad_norm'),
+                'batch/weight_norm': meter.avg('wnorm'),
+                'batch/time': meter.avg('Time')
+            }
+            if robust:
+                batch_metrics.update({
+                    'batch/robust_loss': meter.avg('Rob_Loss'),
+                    'batch/robust_err': meter.avg('Rob_Err')
+                })
+            wandb.log(batch_metrics, step=t * len(loader) + i)
+
         if (i + 1) % args.log_interval == 0 and (train or args.eval or args.verify):
             logger.info('[{:2d}:{:4d}/{:4d}]: eps={:.8f} {}'.format(t, i + 1, len(loader), eps, meter))
             if args.debug:
@@ -123,8 +145,8 @@ def Train(model, model_ori, t, loader, eps_scheduler, opt, loss_fusion=False, va
         meter.update('eps', eps_scheduler.get_eps())
     
     if t <= args.num_reg_epochs:
-        update_log_reg(writer, meter, t, train, model)
-    update_log_writer(args, writer, meter, t, train, robust=(batch_method != 'natural'))
+        update_log_reg(meter, t, train, model)
+    update_log_writer(args, meter, t, train, robust=(batch_method != 'natural'))
        
     return meter
 
@@ -209,6 +231,18 @@ def main(args):
                     logger.info('Best epoch {}, error {:.4f}, robust error {:.4f}'.format(
                         best[-1], best[0], best[1]))
             save(args, epoch=t, best=best, model=model_ori, opt=opt, is_best=is_best)
+            
+            # Log epoch metrics to wandb
+            wandb.log({
+                'epoch/time': epoch_time,
+                'epoch/total_time': timer,
+                'epoch/learning_rate': lr_scheduler.get_last_lr()[0],
+                'epoch/best_error': best[0],
+                'epoch/best_robust_error': best[1]
+            }, step=t)
+    
+    # Close wandb run
+    wandb.finish()
 
 if __name__ == '__main__':
     main(args)
