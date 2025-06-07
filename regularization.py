@@ -67,7 +67,7 @@ def compute_reg(args, model, meter, eps, eps_scheduler):
         modules = list(model._modules.values())[0]._modules
     else:
         modules = model._modules
-    node_inp = modules['/input.1']
+    node_inp = modules['/input-1']
     tightness_0 = ((node_inp.upper - node_inp.lower) / 2).mean()
     ratio_init = tightness_0 / ((node_inp.upper + node_inp.lower) / 2).std()
     cnt_layers = 0
